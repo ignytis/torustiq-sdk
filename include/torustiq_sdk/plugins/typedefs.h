@@ -4,15 +4,19 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-extern "C" struct TorustiqPluginInfo {
-    const char* host_app = "torustiq";
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+typedef struct TorustiqPluginInfo {
+    const char* host_app;
     const unsigned int api_version;
 
     const char* id;
     const char* name;
-};
+} TorustiqPluginInfo;
 
-enum TorustiqMessageType {
+typedef enum TorustiqMessageType {
     /**
      * Regular data message.
      */
@@ -21,26 +25,26 @@ enum TorustiqMessageType {
      * Send when end of data is reached.
      */
     TORUSTIQ_MESSAGE_TYPE_EOF,
-};
+} TorustiqMessageType;
 
-extern "C" struct TorustiqMessageHeader {
+typedef struct TorustiqMessageHeader {
     const char* key;
     const char* value;
-};
+} TorustiqMessageHeader;
 
-extern "C" struct TorustiqMessage {
-    const TorustiqMessageType type;
-    const size_t payload_size;
-    const uint8_t* payload;
-    const size_t headers_count;
-    const TorustiqMessageHeader* headers;
-};
+typedef struct TorustiqMessage {
+    TorustiqMessageType type;
+    size_t payload_size;
+    uint8_t* payload;
+    size_t headers_count;
+    TorustiqMessageHeader* headers;
+} TorustiqMessage;
 
-enum TorustiqPluginStageKind {
+typedef enum TorustiqPluginStageKind {
     TORUSTIQ_PLUGIN_STAGE_KIND_SOURCE,
     TORUSTIQ_PLUGIN_STAGE_KIND_PROCESSOR,
     TORUSTIQ_PLUGIN_STAGE_KIND_SINK,
-};
+} TorustiqPluginStageKind;
 
 /** A handle to a stage instance */
 typedef unsigned int TorustiqPluginStageHandle;
@@ -52,16 +56,16 @@ typedef unsigned int TorustiqPluginStageHandle;
  */
 typedef const TorustiqPluginInfo (*TorustiqPluginGetInfoFnPtr)();
 
-struct CreateNewStageFnArgs {
+typedef struct CreateNewStageFnArgs {
+    TorustiqPluginStageHandle stageHandle;
     TorustiqPluginStageKind stageKind;
-};
+} CreateNewStageFnArgs;
+
 /**
  * torustiq_plugin_create_new_stage function
- * This function is expected to allocate resources for a new stage
- * and return handle to this new instance. The host application will
- * use this handle to operate with stage instance.
+ * This function is expected to allocate resources for a new stage.
  */
-typedef TorustiqPluginStageHandle (*TorustiqPluginCreateNewStageFnPtr)(CreateNewStageFnArgs args);
+typedef void (*TorustiqPluginCreateNewStageFnPtr)(CreateNewStageFnArgs args);
 
 /**
  * torustiq_plugin_stage_start function
@@ -74,15 +78,18 @@ typedef void (*TorustiqPluginStageStartFnPtr)(TorustiqPluginStageHandle stageHan
  * torustiq_plugin_set_config_value function
  * Sets a value for stage confiuguration key.
  */
-typedef void (*TorustiqPluginSetConfigValueFnPtr)(TorustiqPluginStageHandle stageHandle, const char *key, const char *value);
+typedef void (*TorustiqPluginSetStageConfigValueFnPtr)(TorustiqPluginStageHandle stageHandle, const char *key, const char *value);
 
-extern "C" struct TorustiqPlugin {
-    // Should init be called separately from the rest?
-    // TorustiqPluginInitFnPtr             fn_init;
-    TorustiqPluginCreateNewStageFnPtr   fn_create_new_stage;
-    TorustiqPluginSetConfigValueFnPtr   fn_set_config_value;
-    TorustiqPluginStageStartFnPtr       fn_stage_start;
-};
+typedef struct TorustiqPlugin {
+    TorustiqPluginCreateNewStageFnPtr       fn_stage_create_new;
+    TorustiqPluginSetStageConfigValueFnPtr  fn_stage_set_config_value;
+    TorustiqPluginStageStartFnPtr           fn_stage_start;
+} TorustiqPlugin;
+
+/**
+ * This function is called from modules to enqueue a message to the pipeline.
+ */
+typedef const TorustiqMessage* (*TorustiqHostReceiveMessageFnPtr)(TorustiqPluginStageHandle);
 
 /**
  * This function is called from modules to enqueue a message to the pipeline.
@@ -92,9 +99,10 @@ typedef void (*TorustiqHostSendMessageFnPtr)(TorustiqPluginStageHandle, const To
 /**
  * Globals shared with plugin by host
  */
-struct TorustiqHostGlobals {
+typedef struct TorustiqHostGlobals {
+    TorustiqHostReceiveMessageFnPtr receiveMessageFnPtr;
     TorustiqHostSendMessageFnPtr sendMessageFnPtr;
-};
+} TorustiqHostGlobals;
 
 /**
  * torustiq_plugin_init function
@@ -103,5 +111,9 @@ struct TorustiqHostGlobals {
  * which could be shared between stages
  */
 typedef const TorustiqPlugin (*TorustiqPluginInitFnPtr)(TorustiqHostGlobals globals);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  // _TORUSTIQ_LIB_SDK_TYPEDEFS_H_
