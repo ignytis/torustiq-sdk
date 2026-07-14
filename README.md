@@ -1,2 +1,2 @@
-# torustiq-cpp-lib-sdk
+# torustiq-sdk
 SDK for Torustiq libraries

@@ -1,7 +1,7 @@
 #ifndef _TORUSTIQ_SDK_MESSAGE_H_
 #define _TORUSTIQ_SDK_MESSAGE_H_
 
-#include <torustiq_sdk/plugins/typedefs.h>
+#include <torustiq_sdk/typedefs.h>
 
 #ifdef __cplusplus
 extern "C" {

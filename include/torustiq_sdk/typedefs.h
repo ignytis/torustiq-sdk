@@ -1,5 +1,5 @@
-#ifndef _TORUSTIQ_LIB_SDK_TYPEDEFS_H_
-#define _TORUSTIQ_LIB_SDK_TYPEDEFS_H_
+#ifndef _TORUSTIQ_SDK_TYPEDEFS_H_
+#define _TORUSTIQ_SDK_TYPEDEFS_H_
 
 #include <stdint.h>
 #include <stdlib.h>
