@@ -21,6 +21,11 @@ TorustiqMessage* torustiq_message_clone(const TorustiqMessage* src);
  */
 void torustiq_message_free(TorustiqMessage* msg);
 
+/**
+ * Creates a TorustiqMessage representing an end-of-file (EOF) signal.
+ */
+TorustiqMessage torustiq_message_create_eof();
+
 #ifdef __cplusplus
 }
 #endif

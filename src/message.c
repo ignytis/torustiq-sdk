@@ -66,3 +66,13 @@ void torustiq_message_free(TorustiqMessage* msg) {
     free(msg->payload);
     free(msg);
 }
+
+TorustiqMessage torustiq_message_create_eof() {
+    TorustiqMessage msg;
+    msg.type = TORUSTIQ_MESSAGE_TYPE_EOF;
+    msg.payload_size = 0;
+    msg.payload = NULL;
+    msg.headers_count = 0;
+    msg.headers = NULL;
+    return msg;
+}
