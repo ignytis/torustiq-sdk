@@ -10,6 +10,8 @@
 extern "C" {
 #endif
 
+typedef uint8_t* TorustiqBytes;
+
 typedef struct TorustiqPluginInfo {
     const char* host_app;
     const unsigned int api_version;
@@ -37,7 +39,7 @@ typedef struct TorustiqMessageHeader {
 typedef struct TorustiqMessage {
     TorustiqMessageType type;
     size_t payload_size;
-    uint8_t* payload;
+    TorustiqBytes payload;
     size_t headers_count;
     TorustiqMessageHeader* headers;
 } TorustiqMessage;
