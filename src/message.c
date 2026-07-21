@@ -22,7 +22,7 @@ TorustiqMessage* torustiq_message_clone(const TorustiqMessage* src) {
 
     /* Deep-copy payload */
     if (src->payload != NULL && src->payload_size > 0) {
-        dst->payload = (uint8_t*)malloc(src->payload_size);
+        dst->payload = (TorustiqBytes)malloc(src->payload_size);
         if (dst->payload == NULL) {
             free(dst);
             return NULL;
