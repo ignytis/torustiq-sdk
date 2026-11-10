@@ -113,12 +113,46 @@ typedef struct torustiq_registrar {
     int32_t (*register_output)(void* context, const torustiq_output_vtable* vtable);
 } torustiq_registrar;
 
-/*
- * Entry point exported by dynamic plugin libraries:
- *   int32_t torustiq_plugin_register(const torustiq_registrar* registrar);
- * Built-in plugins use differently named registration functions with the same signature.
- */
+/* Registration function. Built-in plugins export differently named ones with this signature. */
 typedef int32_t (*torustiq_plugin_register_fn)(const torustiq_registrar* registrar);
+
+/* General information about a plugin library. */
+typedef struct torustiq_plugin_info {
+    uint32_t abi_version; /* TORUSTIQ_SDK_ABI_VERSION */
+    const char* id;       /* unique plugin ID; also the `type` used in the pipeline YAML */
+} torustiq_plugin_info;
+
+/*
+ * Entry points exported by dynamic plugin libraries (extern "C", unmangled names below).
+ *
+ * Library level (once per library, shared by all pipeline steps that use it):
+ *   const torustiq_plugin_info* torustiq_plugin_get_info(void);
+ *       Mandatory. Must have no side effects: the host calls it on every library it finds,
+ *       including those the pipeline does not use. The result must stay valid while the
+ *       library is loaded.
+ *   int32_t torustiq_plugin_init(const torustiq_registrar* registrar);
+ *       Mandatory. Called once, and only if the pipeline refers to the plugin ID. Registers
+ *       vtables whose `name` equals the plugin ID.
+ *   void torustiq_plugin_shutdown(void);
+ *       Optional. Called once when the host unloads the library, after all steps are destroyed.
+ *
+ * Step level: each pipeline step gets its own `create` / `destroy` call of the registered vtable,
+ * so one library used by several steps is initialised once but creates several step instances.
+ */
+#define TORUSTIQ_PLUGIN_GET_INFO_SYMBOL "torustiq_plugin_get_info"
+#define TORUSTIQ_PLUGIN_INIT_SYMBOL "torustiq_plugin_init"
+#define TORUSTIQ_PLUGIN_SHUTDOWN_SYMBOL "torustiq_plugin_shutdown"
+
+typedef const torustiq_plugin_info* (*torustiq_plugin_get_info_fn)(void);
+typedef torustiq_plugin_register_fn torustiq_plugin_init_fn;
+typedef void (*torustiq_plugin_shutdown_fn)(void);
+
+/* Visibility of exported plugin entry points. */
+#if defined(_WIN32)
+#define TORUSTIQ_PLUGIN_EXPORT __declspec(dllexport)
+#else
+#define TORUSTIQ_PLUGIN_EXPORT __attribute__((visibility("default")))
+#endif
 
 #ifdef __cplusplus
 } /* extern "C" */
