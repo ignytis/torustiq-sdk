@@ -6,14 +6,23 @@ transfer across the boundary, plus optional C++ helpers (`include/torustiq/sdk.h
 in C, C++, Rust or any language with a C FFI can implement it.
 
 ## Concepts
-- **Message**: a body (`torustiq_bytes`: pointer + length, may contain NUL bytes) and string headers.
+- **Message**: a `payload` (`torustiq_value`) and string headers.
+- **Payload**: either simple data (`TORUSTIQ_VALUE_BYTES`: pointer + length, may contain NUL bytes) or
+  structured data (null, bool, int, double, string, array, map), so components read and modify
+  attributes by key (`torustiq_value_map_get`, `torustiq_value_array_at`, or `torustiq::ValueRef` in
+  C++) without parsing and re-serialising. A modified tree may point to unchanged parts of its input.
+- **Payload contract**: `create` receives the payload kind of the upstream step
+  (`torustiq_payload_spec`: `TORUSTIQ_PAYLOAD_BYTES` or `_VALUE`) and declares the kind it emits, or
+  returns `TORUSTIQ_UNSUPPORTED_PAYLOAD`. The host checks the whole chain when the pipeline is built, so
+  `process`/`write` never need to check the kind per message.
 - **Config**: string key/value parameters passed to a component (e.g. credentials). Look up with
   `torustiq_config_get` (C) or `torustiq::ConfigGet` (C++).
 - **Plugin kinds**, each described by a vtable (`abi_version`, `name`, `create`, `destroy`, ...):
   - *input*: `run` blocks and emits messages through a callback until the source ends or `stop` is called;
   - *transform*: `process` emits zero or more messages for each input message;
   - *output*: `write` consumes a message, `flush` is called once at the end.
-- **Status codes**: `TORUSTIQ_OK`, `TORUSTIQ_ERROR`, `TORUSTIQ_STOPPED` (downstream wants no more data).
+- **Status codes**: `TORUSTIQ_OK`, `TORUSTIQ_ERROR`, `TORUSTIQ_STOPPED` (downstream wants no more data),
+  `TORUSTIQ_UNSUPPORTED_PAYLOAD` (from `create`).
 - **Registration**: a plugin library exports
   `int32_t torustiq_plugin_register(const torustiq_registrar*)` and registers its vtables there.
   The `name` in a vtable is the `type` used in the pipeline YAML.
@@ -24,8 +33,12 @@ in C, C++, Rust or any language with a C FFI can implement it.
 ```c
 #include <torustiq/sdk.h>
 
-static int32_t Create(const torustiq_config* config, void** out) { /* allocate state */ *out = NULL; return TORUSTIQ_OK; }
-static int32_t Write(void* handle, const torustiq_message* m) { /* use m->body, m->headers */ return TORUSTIQ_OK; }
+static int32_t Create(const torustiq_config* config, const torustiq_payload_spec* input, void** out) {
+    if (input->kind != TORUSTIQ_PAYLOAD_BYTES) return TORUSTIQ_UNSUPPORTED_PAYLOAD;
+    *out = NULL; /* allocate state */
+    return TORUSTIQ_OK;
+}
+static int32_t Write(void* handle, const torustiq_message* m) { /* use m->payload.as.bytes, m->headers */ return TORUSTIQ_OK; }
 static void Destroy(void* handle) {}
 
 int32_t torustiq_plugin_register(const torustiq_registrar* r) {
