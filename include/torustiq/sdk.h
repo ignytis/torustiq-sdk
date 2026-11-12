@@ -20,7 +20,7 @@
 extern "C" {
 #endif
 
-#define TORUSTIQ_SDK_ABI_VERSION 1u
+#define TORUSTIQ_SDK_ABI_VERSION 2u
 
 /* Status codes. */
 #define TORUSTIQ_OK 0
@@ -122,8 +122,19 @@ static inline torustiq_value torustiq_value_from_bytes(const uint8_t* data, size
     return value;
 }
 
+/* Builds a STRING value (UTF-8 text). */
+static inline torustiq_value torustiq_value_from_text(const char* data, size_t len) {
+    torustiq_value value;
+    memset(&value, 0, sizeof value);
+    value.kind = TORUSTIQ_VALUE_STRING;
+    value.as.bytes.data = (const uint8_t*)data;
+    value.as.bytes.len = len;
+    return value;
+}
+
 /*
- * A message. `payload` is simple data (kind BYTES) or structured data (any other kind). The kind
+ * A message. `payload` is simple data (BYTES), text (a top-level STRING) or structured data (any
+ * other kind). The kind
  * is agreed once when the pipeline is built (see torustiq_payload_spec), so a step does not need
  * to check it for every message.
  */
@@ -133,9 +144,14 @@ typedef struct torustiq_message {
     size_t header_count;
 } torustiq_message;
 
-/* What a step receives or emits: simple data (BYTES) or structured data (VALUE). */
+/*
+ * What a step receives or emits: simple data (BYTES), structured data (VALUE: null, bool, int,
+ * double, array or map) or UTF-8 text (TEXT: the payload is a top-level STRING value). The kinds
+ * are mutually exclusive.
+ */
 #define TORUSTIQ_PAYLOAD_BYTES 0u
 #define TORUSTIQ_PAYLOAD_VALUE 1u
+#define TORUSTIQ_PAYLOAD_TEXT 2u
 
 /*
  * Payload contract between neighbouring steps, negotiated while the pipeline is built, before
@@ -144,7 +160,7 @@ typedef struct torustiq_message {
  * host guarantees that every message matches the agreed spec.
  */
 typedef struct torustiq_payload_spec {
-    uint32_t kind; /* TORUSTIQ_PAYLOAD_BYTES or TORUSTIQ_PAYLOAD_VALUE */
+    uint32_t kind; /* TORUSTIQ_PAYLOAD_BYTES, _VALUE or _TEXT */
 } torustiq_payload_spec;
 
 /* Component parameters (e.g. credentials), from the "config" section of the pipeline YAML. */

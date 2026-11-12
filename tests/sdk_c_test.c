@@ -21,7 +21,7 @@ int main(void) {
     CHECK(torustiq_config_get(&config, "missing") == NULL);
     CHECK(torustiq_config_get(NULL, "user") == NULL);
     CHECK(torustiq_config_get(&config, NULL) == NULL);
-    CHECK(TORUSTIQ_SDK_ABI_VERSION == 1u);
+    CHECK(TORUSTIQ_SDK_ABI_VERSION == 2u);
 
     {
         /* {"user": {"name": "bob"}, "tags": ["a"]} */
@@ -73,6 +73,11 @@ int main(void) {
         message.headers = NULL;
         message.header_count = 0;
         CHECK(message.payload.kind == TORUSTIQ_VALUE_BYTES && message.payload.as.bytes.len == 3);
+
+        message.payload = torustiq_value_from_text("hi", 2);
+        CHECK(message.payload.kind == TORUSTIQ_VALUE_STRING && message.payload.as.bytes.len == 2);
+        CHECK(TORUSTIQ_PAYLOAD_TEXT != TORUSTIQ_PAYLOAD_BYTES &&
+              TORUSTIQ_PAYLOAD_TEXT != TORUSTIQ_PAYLOAD_VALUE);
     }
 
     {

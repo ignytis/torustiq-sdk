@@ -12,7 +12,7 @@ in C, C++, Rust or any language with a C FFI can implement it.
   attributes by key (`torustiq_value_map_get`, `torustiq_value_array_at`, or `torustiq::ValueRef` in
   C++) without parsing and re-serialising. A modified tree may point to unchanged parts of its input.
 - **Payload contract**: `create` receives the payload kind of the upstream step
-  (`torustiq_payload_spec`: `TORUSTIQ_PAYLOAD_BYTES` or `_VALUE`) and declares the kind it emits, or
+  (`torustiq_payload_spec`: `TORUSTIQ_PAYLOAD_BYTES`, `_VALUE` or `_TEXT`; text is a top-level `TORUSTIQ_VALUE_STRING`) and declares the kind it emits, or
   returns `TORUSTIQ_UNSUPPORTED_PAYLOAD`. The host checks the whole chain when the pipeline is built, so
   `process`/`write` never need to check the kind per message.
 - **Config**: string key/value parameters passed to a component (e.g. credentials). Look up with
